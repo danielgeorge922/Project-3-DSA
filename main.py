@@ -1,7 +1,8 @@
 import csv
+import sys
 import time
-import numpy as np
-from collections import deque
+from collections import deque, defaultdict
+import heapq
 
 class HashTable:
     def __init__(self, size):
@@ -19,17 +20,22 @@ class HashTable:
             self.table[index].append((key, value))
 
     def search(self, key):
-        start_time = time.time()
         index = self.hash_function(key)
         if self.table[index] is not None:
             for item in self.table[index]:
                 if item[0] == key:
-                    end_time = time.time()
-                    time_taken_ms = (end_time - start_time) * 1000
-                    return item[1], time_taken_ms
-        end_time = time.time()
-        time_taken_ms = (end_time - start_time) * 1000
-        return None, time_taken_ms
+                    return item[1]  # Directly return the found value
+        return []  # Return empty list if not found
+
+    def resize(self):
+        old_table = self.table
+        self.size *= 2
+        self.table = [None] * self.size
+        self.items_count = 0
+        for bucket in old_table:
+            if bucket:
+                for key, value in bucket:
+                    self.insert(key, value)
 
 class Graph:
     def __init__(self):
@@ -40,10 +46,6 @@ class Graph:
             self.adj_list[song_name] = {"metrics": song_metrics, "neighbors": []}
 
     def add_edge(self, song1, song2):
-        if song1 not in self.adj_list:
-            self.adj_list[song1] = {"metrics": None, "neighbors": []}
-        if song2 not in self.adj_list:
-            self.adj_list[song2] = {"metrics": None, "neighbors": []}
         self.adj_list[song1]["neighbors"].append(song2)
         self.adj_list[song2]["neighbors"].append(song1)
  
@@ -89,64 +91,77 @@ def process_csv_for_graph(file_name, graph):
 def graph_similarity(songs_list, graph):
     start_time = time.time()
 
-    # Calculate the average song score
+    # Calculate the average song metric for 'danceability' (this can be expanded to other metrics as well)
     total_danceability = sum(graph.adj_list[song]["metrics"]["danceability"] for song in songs_list)
     average_song_score = total_danceability / len(songs_list)
 
-    # Initialize the closest songs list
+    # Priority queue to hold songs based on their metric distance from the average, initialized with the starting songs
+    pq = []
+    visited = set()
+    for song in songs_list:
+        if song in graph.adj_list:
+            metrics = graph.adj_list[song]["metrics"]
+            difference = abs(metrics['danceability'] - average_song_score)
+            heapq.heappush(pq, (difference, song))
+            visited.add(song)
+
     closest_songs = []
 
-    # Perform BFS to find similar songs
-    queue = deque(graph.adj_list.keys())
-    visited = set()
-
-    while queue:
-        current_song = queue.popleft()
-        current_metrics = graph.adj_list[current_song]["metrics"]
-        difference = abs(current_metrics['danceability'] - average_song_score)
+    # Process the queue while it has items
+    while pq:
+        difference, current_song = heapq.heappop(pq)
         closest_songs.append((current_song, difference))
-
-        # Sort the closest songs and keep only top 5
-        closest_songs.sort(key=lambda x: x[1])
-        closest_songs = closest_songs[:5]
-
+        
+        # We keep the closest 5 songs, if we have enough and the next difference is larger, we can stop
+        if len(closest_songs) > 5 and pq and pq[0][0] > closest_songs[-1][0]:
+            break
+        
         # Add neighbors to the queue if not visited
         for neighbor in graph.adj_list[current_song]["neighbors"]:
             if neighbor not in visited:
                 visited.add(neighbor)
-                queue.append(neighbor)
+                neighbor_metrics = graph.adj_list[neighbor]["metrics"]
+                neighbor_difference = abs(neighbor_metrics['danceability'] - average_song_score)
+                heapq.heappush(pq, (neighbor_difference, neighbor))
+
+    # Keep only the top 5 closest songs
+    closest_songs = sorted(closest_songs, key=lambda x: x[1])[:5]
 
     end_time = time.time()
     time_taken_ms = (end_time - start_time) * 1000
 
-    # Print the top 5 similar songs
+    # Output the top 5 similar songs
     print("-" * 40)
     print("Top 5 songs similar to your listening history:")
     for i, (song, _) in enumerate(closest_songs, start=1):
         print(f"{i}. {song}")
-
     print(f"Time taken with Graph implementation: {time_taken_ms:.2f} ms")
-
 
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
-    song_score = 0.0  # Initialize song_score as a float
-    amount_songs = 0
+    song_scores = []
     for song in songs_list:
-        result = hash_table.search(song)[0][0] # Get result from hash table
-        song_score = song_score + result
-        amount_songs += 1
-    average_of_songs = song_score/amount_songs
+        result = hash_table.search(song)  # Get result from hash table
+        if result:  # Check if the result is not empty
+            song_scores.append(result[0])  # Assuming result[0] is the metric you are interested in
+        else:
+            print(f"No data found for {song}")
+
+    if not song_scores:
+        print("No valid song data to process.")
+        return
+
+    average_of_songs = sum(song_scores) / len(song_scores)
     closest_songs = []
     for bucket in hash_table.table:
         if bucket:  # Check if the bucket is not empty
-            for song, value in bucket:
+            for song, values in bucket:
                 try:
-                    song_metric = float(value[0])  # Assuming value[0] is the metric
+                    song_metric = values[0]  # Assuming values[0] is the metric
                     difference = abs(song_metric - average_of_songs)
                     closest_songs.append((song, difference))
                 except (TypeError, IndexError, ValueError) as e:
-                    print(f"Error processing hash table song {song}: {e}")
+                    print(f"Error processing song {song}: {e}")
 
     # Sort by the smallest difference and get the top 5
     closest_songs.sort(key=lambda x: x[1])
@@ -157,13 +172,10 @@ def hash_table_similarity(songs_list, hash_table):
 
     print("-" * 40)
     print("5 Songs You Might Like Based off Listening History")
-    i = 1
-    for song, _ in top_5_closest:
+    for i, (song, _) in enumerate(top_5_closest, start=1):
         print(f"{i}. {song}")
-        i += 1
+    print(f"Time taken with Hash Table implementation: {time_taken_ms:.2f} ms")
 
-    print(f"Time taken with Hash Table implementation: {time_taken_ms:.2f} ms")  # Print the time taken
-    
 def main():
     if len(sys.argv) < 2:
         print("Usage: python script.py <filename>")
@@ -196,7 +208,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
 
 """
