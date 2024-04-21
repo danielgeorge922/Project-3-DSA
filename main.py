@@ -213,6 +213,8 @@ def main():
         return
     
     file_name = sys.argv[1]
+    if not file_name.startswith("DATA/"):
+        file_name = "DATA/" + file_name
 
     # Create instances of Graph and HashTable
     graph = Graph()
