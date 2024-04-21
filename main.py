@@ -236,25 +236,28 @@ def main():
         return
 
     songs_list = []
-    for i in range(songs_amount):
+    i = 0  # Initialize the song counter
+    while len(songs_list) < songs_amount:  # Continue until desired number of songs are found
         song_name = input(f'Song {i+1}: ').strip()
         normalized_input = normalize_title(song_name)
-        found = False
-        # Search in graph and hash table
+        found_in_data = False
         for key in graph.adj_list:
             if normalized_input == normalize_title(key):
                 songs_list.append(key)
                 print(f"Added '{key}' based on your input '{song_name}'.")
-                found = True
+                found_in_data = True
                 break
 
-        if not found:
+        if not found_in_data:
             result = hash_table.search(normalized_input)
             if result:
                 songs_list.append(song_name)
                 print("Successful")
             else:
                 print(f"Song '{song_name}' not found. Please try another.")
+                continue  # Skip incrementing the counter if song not found
+
+        i += 1  # Increment the counter only if a song is successfully added
 
     if songs_list:
         hash_table_similarity(songs_list, hash_table)
