@@ -78,7 +78,7 @@ To run SpotiMatch, execute the Python script `spotimatch.py` and provide the pat
 
 Example:
 ```sh
-python spotimatch.py streaming_history.csv
+python main.py genres_v2.csv
 ```
 
 ## Conclusion
