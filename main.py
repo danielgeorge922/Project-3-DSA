@@ -3,11 +3,6 @@ import time
 import numpy as np
 from collections import deque
 
-import csv
-import sys
-import time
-from collections import deque
-
 class HashTable:
     def __init__(self, size):
         self.size = size
@@ -71,6 +66,7 @@ def process_csv_for_hash_table(file_name, hash_table):
     except Exception as e:
         print(f"Failed to process file {file_name}: {e}")
 
+
 def process_csv_for_graph(file_name, graph):
     relevant_fields = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
                        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
@@ -90,7 +86,6 @@ def process_csv_for_graph(file_name, graph):
     except Exception as e:
         print(f"Failed to process file {file_name}: {e}")
 
-        
 def graph_similarity(songs_list, graph):
     start_time = time.time()
 
@@ -98,7 +93,7 @@ def graph_similarity(songs_list, graph):
     total_danceability = sum(graph.adj_list[song]["metrics"]["danceability"] for song in songs_list)
     average_song_score = total_danceability / len(songs_list)
 
-    # Initialize closest songs list
+    # Initialize the closest songs list
     closest_songs = []
 
     # Perform BFS to find similar songs
@@ -132,6 +127,7 @@ def graph_similarity(songs_list, graph):
 
     print(f"Time taken with Graph implementation: {time_taken_ms:.2f} ms")
 
+
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
     song_score = 0.0  # Initialize song_score as a float
@@ -139,7 +135,7 @@ def hash_table_similarity(songs_list, hash_table):
     for song in songs_list:
         result = hash_table.search(song)[0][0] # Get result from hash table
         song_score = song_score + result
-        amount_songs +=1
+        amount_songs += 1
     average_of_songs = song_score/amount_songs
     closest_songs = []
     for bucket in hash_table.table:
@@ -200,7 +196,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
 
 
@@ -299,57 +294,4 @@ def process_csv_for_hash_table(file_name, hash_table):
 #         i += 1
 #
 #     hash_table_similarity(songs_list,hash_table)
-
-"""
-def main():
-
-    graph = Graph()
-    process_csv_for_graph('genres_v2.csv', graph)
-
-    hash_table = HashTable(45000)  # Initialize a hash table with size 45000
-    process_csv_for_hash_table('genres_v2.csv', hash_table)
-
-    print("WELCOME TO SPOTIMATCH")
-    print("-"*40)
-    songs_amount = int(input("List the amount of songs you want to put into the matcher(1 - 10): "))
-
-    graph = Graph()
-    process_csv_for_graph('genres_v2.csv', graph)
-
-    hash_table = HashTable(45000)  # Initialize a hash table with size 45000
-    process_csv_for_hash_table('genres_v2.csv', hash_table)
-
-    i = 1
-    songs_list = []
-
-    print("-" * 40)
-
-    while songs_amount > 0:
-        song_name = input(f'Song {i}: ')
-        found_metrics, time_taken_ms = hash_table.search(song_name)
-        if song_name in graph.adj_list:
-            songs_list.append(song_name)
-            print("Successful")
-        elif(found_metrics):
-            songs_list.append(song_name)
-            print("Successful")
-        else:
-            print(f"Song '{song_name}' not found in the graph")
-            continue
-        songs_amount = songs_amount - 1
-        i = i + 1
-
-
-
-    hash_table_similarity(songs_list, hash_table)
-    graph_similarity(songs_list, graph)
-
-    # handle_graph(songs_amount)
-    # handle_hashtable(songs_amount)
-
-
-if __name__ == '__main__':
-    main()
-
-"""
 
