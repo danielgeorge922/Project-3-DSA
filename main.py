@@ -4,6 +4,7 @@ import time
 import heapq
 import numpy as np
 import sys
+from collections import deque
 
 class HashTable:
     def __init__(self, size=1024):
@@ -126,54 +127,53 @@ def process_csv_for_graph(file_name, graph):
     except Exception as e:
         print(f"Failed to process file {file_name}: {e}")
 
+def bfs(graph, start_song, songs_list):
+    # Initialize distance dictionary to store distances from start_song to other songs
+    distance = {song: float('inf') for song in graph.adj_list}
+    distance[start_song] = 0
+
+    # Initialize a queue for BFS traversal
+    queue = deque([start_song])
+
+    # Perform BFS traversal
+    while queue:
+        current_song = queue.popleft()
+        if current_song in songs_list:
+            songs_list.remove(current_song)  # Remove user-input songs from consideration
+        for neighbor, _ in graph.adj_list[current_song]["neighbors"]:
+            if distance[neighbor] == float('inf'):
+                distance[neighbor] = distance[current_song] + 1
+                queue.append(neighbor)
+
+    # Sort the songs by their distances from the start song and return the top 5
+    closest_songs = sorted(distance.items(), key=lambda x: x[1])[:5]
+    return closest_songs
+
 def graph_similarity(songs_list, graph):
     start_time = time.time()
 
-    # Calculate the average song metric for 'danceability' (this can be expanded to other metrics as well)
-    total_danceability = sum(graph.adj_list[song]["metrics"]["danceability"] for song in songs_list)
-    average_song_score = total_danceability / len(songs_list)
-
-    # Priority queue to hold songs based on their metric distance from the average, initialized with the starting songs
-    pq = []
-    visited = set()
-    for song in songs_list:
-        if song in graph.adj_list:
-            metrics = graph.adj_list[song]["metrics"]
-            difference = abs(metrics['danceability'] - average_song_score)
-            heapq.heappush(pq, (difference, song))
-            visited.add(song)
-
+    # Initialize closest songs list
     closest_songs = []
 
-    # Process the queue while it has items
-    while pq:
-        difference, current_song = heapq.heappop(pq)
-        closest_songs.append((current_song, difference))
+    # Perform BFS for each user-input song
+    for start_song in songs_list:
+        similar_songs = bfs(graph, start_song, songs_list)
+        closest_songs.extend(similar_songs)
         
-        # We keep the closest 5 songs, if we have enough and the next difference is larger, we can stop
-        if len(closest_songs) > 5 and pq and pq[0][0] > closest_songs[-1][0]:
-            break
-        
-        # Add neighbors to the queue if not visited
-        for neighbor in graph.adj_list[current_song]["neighbors"]:
-            if neighbor not in visited:
-                visited.add(neighbor)
-                neighbor_metrics = graph.adj_list[neighbor]["metrics"]
-                neighbor_difference = abs(neighbor_metrics['danceability'] - average_song_score)
-                heapq.heappush(pq, (neighbor_difference, neighbor))
-
-    # Keep only the top 5 closest songs
-    closest_songs = sorted(closest_songs, key=lambda x: x[1])[:5]
+        # Sort the closest songs and keep only top 5
+        closest_songs.sort(key=lambda x: x[1])
+        closest_songs = closest_songs[:5]
 
     end_time = time.time()
     time_taken_ms = (end_time - start_time) * 1000
 
-    # Output the top 5 similar songs
+    # Print the top 5 similar songs
     print("-" * 40)
     print("Top 5 songs similar to your listening history:")
     for i, (song, _) in enumerate(closest_songs, start=1):
         print(f"{i}. {song}")
-    print(f"Time taken with Graph implementation: {time_taken_ms:.2f} ms")
+
+    print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms")
 
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
