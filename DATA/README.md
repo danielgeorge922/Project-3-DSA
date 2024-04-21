@@ -84,5 +84,3 @@ python main.py genres_v2.csv
 ## Conclusion
 
 By following these steps, you can gain valuable insights into your music listening habits and preferences with SpotiMatch. Enjoy exploring your Spotify streaming data!
-
-
