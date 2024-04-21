@@ -88,28 +88,11 @@ class Graph:
 
         return similar_songs[:5]  # Return top 5 similar songs
  
-def process_csv_for_hash_table(file_name, hash_table):
-    relevant_fields = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
+def process_csv(file_name, container, is_graph=False):
+    relevant_fields_hash = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
                        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
                        'duration_ms', 'time_signature']
-    try:
-        with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
-            csv_reader = csv.DictReader(csvfile)
-            for row in csv_reader:
-                try:
-                    song_name = row['song_name']
-                    song_metrics = [float(row[key]) for key in relevant_fields if key in row]
-                    hash_table.insert(song_name, song_metrics)
-                except ValueError as ve:
-                    print(f"Skipping row due to error: {ve}")
-                except KeyError as ke:
-                    print(f"Missing key {ke} in data; this row will be skipped.")
-    except Exception as e:
-        print(f"Failed to process file {file_name}: {e}")
-
-
-def process_csv_for_graph(file_name, graph):
-    relevant_fields = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
+    relevant_fields_graph = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
                        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
                        'duration_ms', 'time_signature', 'genre']
     try:
@@ -118,8 +101,12 @@ def process_csv_for_graph(file_name, graph):
             for row in csv_reader:
                 try:
                     song_name = row['song_name']
-                    song_metrics = {key: (float(row[key]) if key != 'genre' else row[key]) for key in relevant_fields if key in row}
-                    graph.add_song(song_name, song_metrics)
+                    if is_graph:
+                        song_metrics = {key: (float(row[key]) if key != 'genre' else row[key]) for key in relevant_fields_graph if key in row}
+                        container.add_song(song_name, song_metrics)
+                    else:
+                        song_metrics = [float(row[key]) for key in relevant_fields_hash if key in row]
+                        container.insert(song_name, song_metrics)
                 except ValueError as ve:
                     print(f"Skipping row due to error: {ve}")
                 except KeyError as ke:
@@ -178,6 +165,7 @@ def graph_similarity(songs_list, graph):
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
     song_scores = []
+    
     for song in songs_list:
         result = hash_table.search(song)  # Get result from hash table
         if result:  # Check if the result is not empty
@@ -191,6 +179,7 @@ def hash_table_similarity(songs_list, hash_table):
 
     average_of_songs = sum(song_scores) / len(song_scores)
     closest_songs = []
+    
     for bucket in hash_table.table:
         if bucket:  # Check if the bucket is not empty
             for song, values in bucket:
@@ -230,8 +219,8 @@ def main():
     hash_table = HashTable(45000)
     
     # Process the CSV file to populate graph and hash table
-    process_csv_for_graph(file_name, graph)
-    process_csv_for_hash_table(file_name, hash_table)
+    process_csv(file_name, graph, is_graph=True)
+    process_csv(file_name, hash_table)
 
     print("Welcome to SpotiMatch")
     print("-" * 40)
