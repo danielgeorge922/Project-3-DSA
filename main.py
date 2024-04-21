@@ -236,25 +236,28 @@ def main():
         return
 
     songs_list = []
-    for i in range(songs_amount):
+    i = 0  # Initialize the song counter
+    while len(songs_list) < songs_amount:  # Continue until desired number of songs are found
         song_name = input(f'Song {i+1}: ').strip()
         normalized_input = normalize_title(song_name)
-        found = False
-        # Search in graph and hash table
+        found_in_data = False
         for key in graph.adj_list:
             if normalized_input == normalize_title(key):
                 songs_list.append(key)
                 print(f"Added '{key}' based on your input '{song_name}'.")
-                found = True
+                found_in_data = True
                 break
 
-        if not found:
+        if not found_in_data:
             result = hash_table.search(normalized_input)
             if result:
                 songs_list.append(song_name)
                 print("Successful")
             else:
                 print(f"Song '{song_name}' not found. Please try another.")
+                continue  # Skip incrementing the counter if song not found
+
+        i += 1  # Increment the counter only if a song is successfully added
 
     if songs_list:
         hash_table_similarity(songs_list, hash_table)
@@ -265,153 +268,3 @@ def main():
 if __name__ == '__main__':
     main()
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-def process_csv_for_graph(file_name, graph):
-    with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
-        csv_reader = csv.DictReader(csvfile)
-        for row in csv_reader:
-            # Extract song name from the "song_name" column
-            song_name = row['song_name']
-            # Extract song metrics
-            song_metrics = {
-                "danceability": float(row['danceability']),
-                "energy": float(row['energy']),
-                "key": int(row['key']),
-                "loudness": float(row['loudness']),
-                "mode": int(row['mode']),
-                "speechiness": float(row['speechiness']),
-                "acousticness": float(row['acousticness']),
-                "instrumentalness": float(row['instrumentalness']),
-                "liveness": float(row['liveness']),
-                "valence": float(row['valence']),
-                "tempo": float(row['tempo']),
-                "duration_ms": int(row['duration_ms']),
-                "time_signature": int(row['time_signature']),
-                "genre": row['genre']
-            }
-            # Add the song and its metrics to the graph
-            graph.add_song(song_name, song_metrics)
-
-def process_csv_for_hash_table(file_name, hash_table):
-    with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
-        csv_reader = csv.DictReader(csvfile)
-        for row in csv_reader:
-            # Extract song name from the "song_name" column
-            song_name = row['song_name']
-
-            # Extract other data from specified columns and create a list
-            song_metrics = [
-                float(row['danceability']),
-                float(row['energy']),
-                int(row['key']),
-                float(row['loudness']),
-                int(row['mode']),
-                float(row['speechiness']),
-                float(row['acousticness']),
-                float(row['instrumentalness']),
-                float(row['liveness']),
-                float(row['valence']),
-                float(row['tempo']),
-                int(row['duration_ms']),
-                int(row['time_signature']),
-                row['genre']
-            ]
-
-            # Insert song into the hash table
-            hash_table.insert(song_name, song_metrics)
- """
-
-# def handle_graph(songs_amount):
-#     graph = Graph()
-#     process_csv_for_graph('genres_v2.csv', graph)
-#     i = 1
-#     songs_list = []
-#     print("-" * 40)
-#     while songs_amount > 0:
-#         song_name = input(f'Song {i}: ')
-#         if song_name in graph.adj_list:
-#             songs_list.append(song_name)
-#             print("Successful")
-#         else:
-#             print(f"Song '{song_name}' not found in the graph")
-#             continue
-#         songs_amount = songs_amount - 1
-#         i = i + 1
-#     graph_similarity(songs_list,graph)
-#
-# def handle_hashtable(songs_amount):
-#     hash_table = HashTable(45000)  # Initialize a hash table with size 45000
-#     process_csv_for_hash_table('genres_v2.csv', hash_table)
-#
-#     i = 1
-#     songs_list = []
-#     while songs_amount > 0:
-#         song_name = input(f'Song {i}: ')
-#
-#         found_metrics, time_taken_ms = hash_table.search(song_name)
-#         if found_metrics:
-#             # print(f"Song Metrics for '{song_name}' (HASH TABLE):", found_metrics)
-#             songs_list.append(song_name)
-#             print("Successful")
-#         else:
-#             print(f"Song '{song_name}' not found")
-#             continue
-#         songs_amount -= 1
-#         i += 1
-#
-#     hash_table_similarity(songs_list,hash_table)
-
