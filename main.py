@@ -3,6 +3,7 @@ import time
 import numpy as np
 from collections import deque
 
+
 class HashTable:
     def __init__(self, size):
         self.size = size
@@ -51,6 +52,7 @@ class Graph:
         self.adj_list[song1]["neighbors"].append(song2)
         self.adj_list[song2]["neighbors"].append(song1)
 
+
 def process_csv_for_graph(file_name, graph):
     with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
         csv_reader = csv.DictReader(csvfile)
@@ -76,6 +78,7 @@ def process_csv_for_graph(file_name, graph):
             }
             # Add the song and its metrics to the graph
             graph.add_song(song_name, song_metrics)
+
 
 def process_csv_for_hash_table(file_name, hash_table):
     with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
@@ -105,6 +108,7 @@ def process_csv_for_hash_table(file_name, hash_table):
             # Insert song into the hash table
             hash_table.insert(song_name, song_metrics)
 
+
 def graph_similarity(songs_list, graph):
     start_time = time.time()
 
@@ -112,7 +116,7 @@ def graph_similarity(songs_list, graph):
     total_danceability = sum(graph.adj_list[song]["metrics"]["danceability"] for song in songs_list)
     average_song_score = total_danceability / len(songs_list)
 
-    # Initialize closest songs list
+    # Initialize the closest songs list
     closest_songs = []
 
     # Perform BFS to find similar songs
@@ -146,6 +150,7 @@ def graph_similarity(songs_list, graph):
 
     print(f"Time taken with Graph implementation: {time_taken_ms:.2f} ms")
 
+
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
     song_score = 0.0  # Initialize song_score as a float
@@ -153,7 +158,7 @@ def hash_table_similarity(songs_list, hash_table):
     for song in songs_list:
         result = hash_table.search(song)[0][0] # Get result from hash table
         song_score = song_score + result
-        amount_songs +=1
+        amount_songs += 1
     average_of_songs = song_score/amount_songs
     closest_songs = []
     for bucket in hash_table.table:
@@ -223,6 +228,7 @@ def hash_table_similarity(songs_list, hash_table):
 #
 #     hash_table_similarity(songs_list,hash_table)
 
+
 def main():
 
     graph = Graph()
@@ -252,7 +258,7 @@ def main():
         if song_name in graph.adj_list:
             songs_list.append(song_name)
             print("Successful")
-        elif(found_metrics):
+        elif found_metrics:
             songs_list.append(song_name)
             print("Successful")
         else:
@@ -272,5 +278,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
