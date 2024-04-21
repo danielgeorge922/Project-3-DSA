@@ -1,37 +1,48 @@
 import csv
 import sys
 import time
-from collections import deque, defaultdict
 import heapq
+import numpy as np
+import sys
 
 class HashTable:
-    def __init__(self, size):
+    def __init__(self, size=1024):
         self.size = size
         self.table = [None] * size
+        self.items_count = 0
 
     def hash_function(self, key):
-        return hash(key) % self.size
+        # Simple hash function to distribute keys more uniformly
+        hash_code = 0
+        for char in key:
+            hash_code = (hash_code * 31 + ord(char)) % self.size
+        return hash_code
 
     def insert(self, key, value):
         index = self.hash_function(key)
         if self.table[index] is None:
             self.table[index] = [(key, value)]
         else:
+            for i, (item_key, _) in enumerate(self.table[index]):
+                if item_key == key:
+                    # Update existing entry if identical key found
+                    self.table[index][i] = (key, value)
+                    return
             self.table[index].append((key, value))
+        self.items_count += 1
 
     def search(self, key):
         index = self.hash_function(key)
         if self.table[index] is not None:
-            for item in self.table[index]:
-                if item[0] == key:
-                    return item[1]  # Directly return the found value
-        return []  # Return empty list if not found
+            for item_key, value in self.table[index]:
+                if item_key == key:
+                    return value
+        return None
 
     def resize(self):
         old_table = self.table
         self.size *= 2
         self.table = [None] * self.size
-        self.items_count = 0
         for bucket in old_table:
             if bucket:
                 for key, value in bucket:
@@ -42,12 +53,39 @@ class Graph:
         self.adj_list = {}
 
     def add_song(self, song_name, song_metrics):
-        if song_name not in self.adj_list:
-            self.adj_list[song_name] = {"metrics": song_metrics, "neighbors": []}
+        if song_name in self.adj_list:
+            print(f"'{song_name}' already exists. Consider updating instead of adding.")
+            return
+        
+        self.adj_list[song_name] = {"metrics": song_metrics, "neighbors": []}
 
     def add_edge(self, song1, song2):
-        self.adj_list[song1]["neighbors"].append(song2)
-        self.adj_list[song2]["neighbors"].append(song1)
+        if song1 in self.adj_list and song2 in self.adj_list:
+            metrics1 = np.array([self.adj_list[song1]["metrics"][key] for key in ["danceability", "energy"]])
+            metrics2 = np.array([self.adj_list[song2]["metrics"][key] for key in ["danceability", "energy"]])
+            distance = np.linalg.norm(metrics1 - metrics2)
+            self.adj_list[song1]["neighbors"].append((song2, 1 / (1 + distance)))
+            self.adj_list[song2]["neighbors"].append((song1, 1 / (1 + distance)))
+
+    def get_similar_songs(self, song_name):
+        if song_name not in self.adj_list:
+            return []
+        
+        visited = set()
+        pq = []
+        heapq.heappush(pq, (0, song_name))
+        similar_songs = []
+
+        while pq:
+            dist, song = heapq.heappop(pq)
+            if song not in visited:
+                visited.add(song)
+                similar_songs.append((song, dist))
+                for neighbor, weight in self.adj_list[song]["neighbors"]:
+                    if neighbor not in visited:
+                        heapq.heappush(pq, (dist + weight, neighbor))
+
+        return similar_songs[:5]  # Return top 5 similar songs
  
 def process_csv_for_hash_table(file_name, hash_table):
     relevant_fields = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
@@ -175,6 +213,10 @@ def hash_table_similarity(songs_list, hash_table):
     for i, (song, _) in enumerate(top_5_closest, start=1):
         print(f"{i}. {song}")
     print(f"Time taken with Hash Table implementation: {time_taken_ms:.2f} ms")
+    
+def normalize_title(title):
+    """Normalize the title to lower case for uniform comparison."""
+    return title.lower().strip()
 
 def main():
     if len(sys.argv) < 2:
@@ -182,32 +224,108 @@ def main():
         return
     
     file_name = sys.argv[1]
-    
-    graph = Graph()
-    process_csv_for_graph(file_name, graph)
 
+    # Create instances of Graph and HashTable
+    graph = Graph()
     hash_table = HashTable(45000)
+    
+    # Process the CSV file to populate graph and hash table
+    process_csv_for_graph(file_name, graph)
     process_csv_for_hash_table(file_name, hash_table)
 
     print("Welcome to SpotiMatch")
-    print("-"*40)
-    songs_amount = int(input("List the amount of songs you want to put into the matcher (1 - 10): "))
-    
+    print("-" * 40)
+    try:
+        songs_amount = int(input("List the amount of songs you want to put into the matcher (1 - 10): "))
+        if not 1 <= songs_amount <= 10:
+            print("The number of songs must be between 1 and 10.")
+            return
+    except ValueError:
+        print("Invalid number of songs.")
+        return
+
     songs_list = []
     for i in range(songs_amount):
-        song_name = input(f'Song {i+1}: ')
-        if song_name in graph.adj_list or hash_table.search(song_name)[0]:
-            songs_list.append(song_name)
-            print("Successful")
-        else:
-            print(f"Song '{song_name}' not found. Please try another.")
-            continue
+        song_name = input(f'Song {i+1}: ').strip()
+        normalized_input = normalize_title(song_name)
+        found = False
+        # Search in graph and hash table
+        for key in graph.adj_list:
+            if normalized_input == normalize_title(key):
+                songs_list.append(key)
+                print(f"Added '{key}' based on your input '{song_name}'.")
+                found = True
+                break
 
-    hash_table_similarity(songs_list, hash_table)
-    graph_similarity(songs_list, graph)
+        if not found:
+            result = hash_table.search(normalized_input)
+            if result:
+                songs_list.append(song_name)
+                print("Successful")
+            else:
+                print(f"Song '{song_name}' not found. Please try another.")
+
+    if songs_list:
+        hash_table_similarity(songs_list, hash_table)
+        graph_similarity(songs_list, graph)
+    else:
+        print("No valid songs were inputted for processing.")
 
 if __name__ == '__main__':
     main()
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 """
