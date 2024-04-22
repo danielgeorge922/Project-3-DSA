@@ -2,7 +2,7 @@ import random
 import csv
 
 
-def generate_user_data():
+def generate_user_data(entries):
     songs = {}
     with open('author-artist_list', 'r', newline='', encoding='utf-8') as f:
         for i in range(0, 200):
@@ -10,28 +10,25 @@ def generate_user_data():
             song = f.readline().strip()
             songs[i] = artist + "," + song
 
-    user_data = [['artist', 'track_name', 'ms_played']]
+    user_data = [['artist', 'song_name', 'duration_ms', 'danceability', 'energy']]
 
-    entry = []
-    for i in range(15000):
+
+    for i in range(entries):
         index = random.randint(0, songs.__len__() - 1)
 
-        listening_time = random.randint(1, 300000)
-
         entry = songs[index].split(",")
-        entry.append(str(listening_time))
+        entry.append(str(random.randint(1, 300000)))   # duration_ms
+        entry.append(str(random.random()))                    # danceability
+        entry.append(str(random.random()))                    # energy
+
         user_data.append(entry)
-
-
-
-
 
     return user_data
 
 
-def user_data_generator(quantity):
-    for i in range(quantity):
-        data = generate_user_data()
+def user_data_generator(user_count, entries):
+    for i in range(user_count):
+        data = generate_user_data(entries)
 
         csv_file_path = "user_data" + str(i) + ".csv"
         with open(csv_file_path, mode='w', newline='') as file:
@@ -41,5 +38,6 @@ def user_data_generator(quantity):
             writer.writerows(data)
         print(f"CSV file '{csv_file_path}' created successfully.")
 
+
 if __name__ == "__main__":
-    user_data_generator(10)
+    user_data_generator(10, 15000)
