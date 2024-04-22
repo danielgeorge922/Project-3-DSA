@@ -279,7 +279,17 @@ def top_10_songs(container, is_graph=False):
     time_taken_ms = (end_time - start_time) * 1000
     print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms")
     print()
+"""        
+        for key, value in container.adj_list.items():
+            print(value.get('metrics')[0])
+            if heap.__len__() == 10 and value[0] < heap[0][0]:
+                continue
+            else:
+                heappush(heap, (value[0], key))
 
+            if heap.__len__() > 10:
+                heappop(heap)
+"""
 
 def main():
     while True:
@@ -360,7 +370,8 @@ def main():
             else:
                 print("No valid songs were inputted for processing.")
         elif option == 2:
-            file_name = input("Please enter your data file name. [0 to quit]: ")
+            #file_name = input("Please enter your data file name. [0 to quit]: ")
+            file_name = "DATA/genres_v2.csv"
 
             if file_name == "0":
                 break
@@ -372,7 +383,8 @@ def main():
             process_csv(file_name, hash_table)
             process_csv(file_name, graph, is_graph=True)
 
-            top_10_songs(hash_table)
+#            top_10_songs(hash_table)
+            top_10_songs(graph, is_graph=True)
 
             continue_flag = input("Press Enter to continue...")
             if continue_flag:
