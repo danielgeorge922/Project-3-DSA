@@ -79,9 +79,11 @@ if __name__ == "__main__":
 
     artist_list = ["Drake", "2Pac"]
 
-    result = search_for_track(token, "Uptown Funk")
+    result = search_for_track(token, "Way 2 Sexy")
+    #print(result)
 
     artist = result["tracks"]["items"][0]["artists"][0]["name"]
+
     track_length = result["tracks"]["items"][0]["duration_ms"]
     track_genres = search_for_artist(token, artist)["genres"]
 
@@ -91,6 +93,7 @@ if __name__ == "__main__":
 
 
 
+"""
     for artist in artist_list:
         result = search_for_artist(token, artist)
         print(artist)
@@ -100,3 +103,4 @@ if __name__ == "__main__":
 
         result = search_for_artist(token, "2Pac")
         print(result["genres"])
+"""

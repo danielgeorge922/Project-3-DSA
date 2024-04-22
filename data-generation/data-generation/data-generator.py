@@ -4,21 +4,27 @@ import csv
 
 def generate_user_data():
     songs = {}
-    with open('song-list', 'r', newline='', encoding='utf-8') as f:
-        for i in range(0, 600):
-            songs[i] = f.readline().strip()
+    with open('author-artist_list', 'r', newline='', encoding='utf-8') as f:
+        for i in range(0, 200):
+            artist = f.readline().strip()
+            song = f.readline().strip()
+            songs[i] = artist + "," + song
 
-    user_data = []
-    user_data.append(['track_name', 'ms_played', 'genres'])
+    user_data = [['artist', 'track_name', 'ms_played']]
 
     entry = []
-    for i in range(20000):
-        song = random.choice(songs)
+    for i in range(15000):
+        index = random.randint(0, songs.__len__() - 1)
 
         listening_time = random.randint(1, 300000)
 
-        entry = [song, listening_time]
+        entry = songs[index].split(",")
+        entry.append(str(listening_time))
         user_data.append(entry)
+
+
+
+
 
     return user_data
 
