@@ -258,29 +258,56 @@ def top_10_songs(container, is_graph=False):
     start_time = time.time()
 
     if is_graph:
-        # Handle graph logic here if necessary
-        pass
+        # Example of handling graph logic; assuming each song in graph.adj_list has a 'popularity' metric
+        for song, data in container.adj_list.items():
+            popularity = data['metrics'].get('popularity', 0)  # Replace 'popularity' with your actual metric
+            if len(heap) < 10:
+                heapq.heappush(heap, (popularity, song))
+            elif popularity > heap[0][0]:
+                heapq.heappushpop(heap, (popularity, song))
     else:
+        # Assuming hash table buckets contain song metrics including 'popularity'
         for bucket in container.table:
             if bucket:
                 for song, metrics in bucket:
+                    popularity = metrics.get('popularity', 0)  # Replace 'popularity' with your actual metric
                     if len(heap) < 10:
-                        heappush(heap, (metrics['metric'], song))  # Adjust 'metric' key as needed
-                    else:
-                        # Only push new item if it's better than the smallest on the heap
-                        if metrics['metric'] > heap[0][0]:
-                            heappush(heap, (metrics['metric'], song))
-                            heappop(heap)
+                        heapq.heappush(heap, (popularity, song))
+                    elif popularity > heap[0][0]:
+                        heapq.heappushpop(heap, (popularity, song))
 
     end_time = time.time()
     time_taken_ms = (end_time - start_time) * 1000
 
     print("Top 10 Songs:")
-    sorted_songs = sorted(heap, key=lambda x: -x[0])  # Sort descending based on the metric
+    sorted_songs = sorted(heap, reverse=True, key=lambda x: x[0])  # Sort descending based on the metric
     for i, (metric, song) in enumerate(sorted_songs, start=1):
-        print(f"{i}. {song}: {metric:.4f}")
+        print(f"{i}. {song} ")
 
     print(f"Time taken with {'Graph' if is_graph else 'HashTable'} implementation: {time_taken_ms:.2f} ms\n")
+    
+def top_10_genres(file_name):
+    genre_count = {}
+    start_time = time.time()
+
+    with open(file_name, 'r', encoding='utf-8') as csvfile:
+        csv_reader = csv.DictReader(csvfile)
+        for row in csv_reader:
+            genre = row['genre'].strip()  # Assuming the genre is not a list and just a string
+            if genre:
+                genre_count[genre] = genre_count.get(genre, 0) + 1
+
+    # Extract the top 10 genres
+    top_genres = sorted(genre_count.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    end_time = time.time()
+    time_taken_ms = (end_time - start_time) * 1000
+    
+    print("Top 10 Genres:")
+    for i, (genre, count) in enumerate(top_genres, start=1):
+        print(f"{i}. {genre}: {count}")
+    
+    print(f"Time taken: {time_taken_ms:.2f} ms\n") 
 
 def main():
     if len(sys.argv) < 2:
@@ -368,12 +395,17 @@ def main():
             else:
                 print("No valid songs were inputted for processing.")
 
-        elif option in {2, 3}:
+        elif option == 2:
             print("\nFetching top 10 songs/genres...\n")
             start_time = time.time()
             top_10_songs(graph, is_graph=(option == 2))
             end_time = time.time()
             print(f"Top 10 list generated in {end_time - start_time:.2f} seconds\n")
+        
+        elif option == 3:
+            # The file_name variable should already contain the CSV file path
+            print("\nFetching top 10 genres...\n")
+            top_10_genres(file_name)  # Call the function with the CSV file path
 
         elif option == 4:
             print("User similarity feature is currently not implemented.")
