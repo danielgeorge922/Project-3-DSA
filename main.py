@@ -21,7 +21,7 @@ Welcome to SpotiMatch
     3. Top 10 Genres
         --> Input data file
     4. User Similarity
-        --> Input # users to compare
+        --> Input # users to compare in musical taste
     5. Graph Visualization
         --> Input data files
 """
@@ -88,6 +88,7 @@ class Graph:
             metrics2 = np.array([self.adj_list[song2]["metrics"][key] for key in ["danceability", "energy"]])
             distance = np.linalg.norm(metrics1 - metrics2)
             self.adj_list[song1]["neighbors"].append((song2, 1 / (1 + distance)))
+            # I think we can delete the line below because we can consider any edge to be bidirectional
             self.adj_list[song2]["neighbors"].append((song1, 1 / (1 + distance)))
 
     def get_similar_songs(self, song_name):

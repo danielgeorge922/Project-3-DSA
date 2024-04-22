@@ -10,21 +10,18 @@ def generate_user_data():
             song = f.readline().strip()
             songs[i] = artist + "," + song
 
-    user_data = [['artist', 'track_name', 'ms_played']]
+    user_data = [['artist', 'track_name', 'duration_ms', 'danceability', 'energy']]
 
     entry = []
     for i in range(15000):
         index = random.randint(0, songs.__len__() - 1)
 
-        listening_time = random.randint(1, 300000)
-
         entry = songs[index].split(",")
-        entry.append(str(listening_time))
+        entry.append(str(random.randint(1, 300000)))   # duration_ms
+        entry.append(str(random.random()))                    # danceability
+        entry.append(str(random.random()))                    # energy
+
         user_data.append(entry)
-
-
-
-
 
     return user_data
 
