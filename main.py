@@ -254,114 +254,91 @@ def normalize_title(title):
     return title.lower().strip()
 
 def top_10_songs(container, is_graph=False):
-    heap = [(0, '')]
-    heapify(heap)
-    killmonger_count = 0
+    heap = []
     start_time = time.time()
 
     if is_graph:
+        # Handle graph logic here if necessary
         pass
     else:
-        for i in range(container.size):
-            if container.table[i] is not None:
-                for song, metric in container.table[i]:
-                    if heap[0][0] == 'killmonger':
-                        killmonger_count += 1
-                        if killmonger_count == 2:
-                            print('why')
-
-
-                    if heap.__len__() == 10 and metric[0] < heap[0][0]:
-                        continue
+        for bucket in container.table:
+            if bucket:
+                for song, metrics in bucket:
+                    if len(heap) < 10:
+                        heappush(heap, (metrics['metric'], song))  # Adjust 'metric' key as needed
                     else:
-                        heappush(heap, (metric[0], song))
-
-                    if heap.__len__() > 10:
-                        heappop(heap)
-
+                        # Only push new item if it's better than the smallest on the heap
+                        if metrics['metric'] > heap[0][0]:
+                            heappush(heap, (metrics['metric'], song))
+                            heappop(heap)
 
     end_time = time.time()
+    time_taken_ms = (end_time - start_time) * 1000
 
     print("Top 10 Songs:")
-    for i, entry in enumerate(heap, start=1):
-        print(f"{i}. {entry[1]}: {entry[0]:.4f} ms")
+    sorted_songs = sorted(heap, key=lambda x: -x[0])  # Sort descending based on the metric
+    for i, (metric, song) in enumerate(sorted_songs, start=1):
+        print(f"{i}. {song}: {metric:.4f}")
 
-    time_taken_ms = (end_time - start_time) * 1000
-    print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms\n")
-"""        
-        for key, value in container.adj_list.items():
-            print(value.get('metrics')[0])
-            if heap.__len__() == 10 and value[0] < heap[0][0]:
-                continue
-            else:
-                heappush(heap, (value[0], key))
-
-            if heap.__len__() > 10:
-                heappop(heap)
-"""
+    print(f"Time taken with {'Graph' if is_graph else 'HashTable'} implementation: {time_taken_ms:.2f} ms\n")
 
 def main():
-    print("-" * 40)
-    print("*" * 8 + " Welcome to SpotiMatch " + "*" * 9)
-    print("-" * 40)
-    print()
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <data_file.csv>")
+        sys.exit(1)
+
+    file_name = sys.argv[1]
+    if not file_name.startswith("DATA/"):
+        file_name = "DATA/" + file_name
+
+    # Create instances of Graph and HashTable
+    graph = Graph()
+    hash_table = HashTable(45000)
+
+    # Process the CSV file to populate graph and hash table
+    print("\nProcessing data...\n")
+    start_time = time.time()
+    process_csv(file_name, hash_table)
+    process_csv(file_name, graph, is_graph=True)
+    end_time = time.time()
+    print(f"Data processing completed in {end_time - start_time:.2f} seconds\n")
 
     while True:
+        print("-" * 40)
+        print("*" * 8 + " Welcome to SpotiMatch " + "*" * 9)
+        print("-" * 40)
         print("   MENU:")
         print("1. Song Matcher")
         print("2. Top 10 Songs")
         print("3. Top 10 Genres")
         print("4. User Similarity")
-        print("5. Graph Visualization\n")
+        print("5. Graph Visualization")
+        print("0. Exit")
         print("-" * 40)
-        print()
-        option = int(input("Please select an option from the menu above: [0 to quit] "))
+
+        option = input("Please select an option from the menu above: [0 to quit] ")
+        if not option.isdigit() or not (0 <= int(option) <= 5):
+            print("Please enter a valid option.")
+            continue
+        option = int(option)
 
         if option == 0:
             print("Goodbye!")
             break
 
         if option == 1:
-            file_name = input("Please enter your data file name. [0 to quit]: ")
-            if file_name == "0":
-                break
-            if not file_name.startswith("DATA/"):
-                file_name = "DATA/" + file_name
-
-            # Create instances of Graph and HashTable
-            graph = Graph()
-            hash_table = HashTable(45000)
-
-            print("-" * 60)
-            print()
-            # Process the CSV file to populate graph and hash table
-            start_ht_time = time.time()
-            process_csv(file_name, hash_table)
-            end_ht_time = time.time()
-            
-            print(f"Time taken to create and populate HashTable: {end_ht_time - start_ht_time:.2f} seconds")
-
-            start_g_time = time.time()
-            process_csv(file_name, graph, is_graph=True)
-            end_g_time = time.time()
-            
-            print(f"Time taken to create and populate Graph: {end_g_time - start_g_time:.2f} seconds\n")
-            print("-" * 60)
-            
-#            print("Welcome to SpotiMatch")
-#            print("-" * 40)
             try:
-                songs_amount = int(input("\nList the amount of songs you want to put into the matcher (1 - 10): "))
+                songs_amount = int(input("List the amount of songs you want to put into the matcher (1 - 10): "))
                 if not 1 <= songs_amount <= 10:
                     print("The number of songs must be between 1 and 10.")
-                    return
+                    continue
             except ValueError:
-                print("Invalid number of songs.")
-                return
+                print("Invalid number of songs entered.")
+                continue
 
             songs_list = []
-            i = 0  # Initialize the song counter
-            while len(songs_list) < songs_amount:  # Continue until desired number of songs are found
+            i = 0
+            while len(songs_list) < songs_amount:
                 song_name = input(f'Song {i+1}: ').strip()
                 normalized_input = normalize_title(song_name)
                 found_in_data = False
@@ -390,29 +367,22 @@ def main():
                 print()
             else:
                 print("No valid songs were inputted for processing.")
-        elif option == 2:
-            #file_name = input("Please enter your data file name. [0 to quit]: ")
-            file_name = "DATA/genres_v2.csv"
 
-            if file_name == "0":
-                break
-            elif not file_name.startswith("DATA/"):
-                file_name = "DATA/" + file_name
+        elif option in {2, 3}:
+            print("\nFetching top 10 songs/genres...\n")
+            start_time = time.time()
+            top_10_songs(graph, is_graph=(option == 2))
+            end_time = time.time()
+            print(f"Top 10 list generated in {end_time - start_time:.2f} seconds\n")
 
-            hash_table = HashTable(45000)
-            graph = Graph()
-            process_csv(file_name, hash_table)
-            process_csv(file_name, graph, is_graph=True)
+        elif option == 4:
+            print("User similarity feature is currently not implemented.")
 
-#            top_10_songs(hash_table)
-            top_10_songs(graph, is_graph=True)
+        elif option == 5:
+            print("Graph visualization feature is currently not implemented.")
 
-            continue_flag = input("Press Enter to continue...")
-            if continue_flag:
-                continue
-            break
-
+        input("Press Enter to continue...")
 
 if __name__ == '__main__':
     main()
-
+    
