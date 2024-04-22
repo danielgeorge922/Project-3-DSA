@@ -5,6 +5,7 @@ import heapq
 import numpy as np
 import sys
 from collections import deque
+from heapq import heapify, heappush, heappop
 """
 TODO: Show top 10 songs and top 10 genres per user
 TODO: Determine a similarity score in musical taste between users
@@ -242,66 +243,143 @@ def normalize_title(title):
     return title.lower().strip()
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python script.py <filename>")
-        return
-    
-    file_name = sys.argv[1]
-    if not file_name.startswith("DATA/"):
-        file_name = "DATA/" + file_name
+def top_10_songs(container, is_graph=False):
+    heap = [(0, '')]
+    heapify(heap)
+    killmonger_count = 0
+    start_time = time.time()
 
-    # Create instances of Graph and HashTable
-    graph = Graph()
-    hash_table = HashTable(45000)
-    
-    # Process the CSV file to populate graph and hash table
-    process_csv(file_name, graph, is_graph=True)
-    process_csv(file_name, hash_table)
-
-    print("Welcome to SpotiMatch")
-    print("-" * 40)
-    try:
-        songs_amount = int(input("List the amount of songs you want to put into the matcher (1 - 10): "))
-        if not 1 <= songs_amount <= 10:
-            print("The number of songs must be between 1 and 10.")
-            return
-    except ValueError:
-        print("Invalid number of songs.")
-        return
-
-    songs_list = []
-    i = 0  # Initialize the song counter
-    while len(songs_list) < songs_amount:  # Continue until desired number of songs are found
-        song_name = input(f'Song {i+1}: ').strip()
-        normalized_input = normalize_title(song_name)
-        found_in_data = False
-        for key in graph.adj_list:
-            if normalized_input == normalize_title(key):
-                songs_list.append(key)
-                print(f"Added '{key}' based on your input '{song_name}'.")
-                found_in_data = True
-                print()
-                break
-
-        if not found_in_data:
-            result = hash_table.search(normalized_input)
-            if result:
-                songs_list.append(song_name)
-                print("Successful")
-            else:
-                print(f"Song '{song_name}' not found. Please try another.")
-                continue  # Skip incrementing the counter if song not found
-
-        i += 1  # Increment the counter only if a song is successfully added
-
-    if songs_list:
-        hash_table_similarity(songs_list, hash_table)
-        graph_song_similarity(songs_list, graph)
+    if is_graph:
+        pass
     else:
-        print("No valid songs were inputted for processing.")
+        for i in range(container.size):
+            if container.table[i] is not None:
+                for song, metric in container.table[i]:
+                    if heap[0][0] == 'killmonger':
+                        killmonger_count += 1
+                        if killmonger_count == 2:
+                            print('why')
+
+
+                    if heap.__len__() == 10 and metric[0] < heap[0][0]:
+                        continue
+                    else:
+                        heappush(heap, (metric[0], song))
+
+                    if heap.__len__() > 10:
+                        heappop(heap)
+
+
+    end_time = time.time()
+
+    print("Top 10 Songs:")
+    for i, entry in enumerate(heap, start=1):
+        print(f"{i}. {entry[1]}: {entry[0]:.4f} ms")
+
+    time_taken_ms = (end_time - start_time) * 1000
+    print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms")
+    print()
+
+
+def main():
+    while True:
+        print("Welcome to SpotiMatch")
+        print("-" * 40)
+        print("1. Song Matcher")
+        print("2. Top 10 Songs")
+        print("3. Top 10 Genres")
+        print("4. User Similarity")
+        print("5. Graph Visualization")
+        print("-" * 40)
+        option = int(input("Please select an option from the menu above: [0 to quit] "))
+
+        if option == 0:
+            print("Goodbye!")
+            break
+        elif option == 1:
+            file_name = input("Please enter your data file name. [0 to quit]: ")
+            if file_name == "0":
+                break
+            elif not file_name.startswith("DATA/"):
+                file_name = "DATA/" + file_name
+
+#            if len(sys.argv) < 2:
+#                print("Usage: python script.py <filename>")
+#                return
+
+
+
+            # Create instances of Graph and HashTable
+            graph = Graph()
+            hash_table = HashTable(45000)
+
+            # Process the CSV file to populate graph and hash table
+            process_csv(file_name, graph, is_graph=True)
+            process_csv(file_name, hash_table)
+
+#            print("Welcome to SpotiMatch")
+#            print("-" * 40)
+            try:
+                songs_amount = int(input("List the amount of songs you want to put into the matcher (1 - 10): "))
+                if not 1 <= songs_amount <= 10:
+                    print("The number of songs must be between 1 and 10.")
+                    return
+            except ValueError:
+                print("Invalid number of songs.")
+                return
+
+            songs_list = []
+            i = 0  # Initialize the song counter
+            while len(songs_list) < songs_amount:  # Continue until desired number of songs are found
+                song_name = input(f'Song {i+1}: ').strip()
+                normalized_input = normalize_title(song_name)
+                found_in_data = False
+                for key in graph.adj_list:
+                    if normalized_input == normalize_title(key):
+                        songs_list.append(key)
+                        print(f"Added '{key}' based on your input '{song_name}'.")
+                        found_in_data = True
+                        print()
+                        break
+
+                if not found_in_data:
+                    result = hash_table.search(normalized_input)
+                    if result:
+                        songs_list.append(song_name)
+                        print("Successful")
+                    else:
+                        print(f"Song '{song_name}' not found. Please try another.")
+                        continue  # Skip incrementing the counter if song not found
+
+                i += 1  # Increment the counter only if a song is successfully added
+
+            if songs_list:
+                hash_table_similarity(songs_list, hash_table)
+                graph_song_similarity(songs_list, graph)
+                print()
+            else:
+                print("No valid songs were inputted for processing.")
+        elif option == 2:
+            file_name = input("Please enter your data file name. [0 to quit]: ")
+
+            if file_name == "0":
+                break
+            elif not file_name.startswith("DATA/"):
+                file_name = "DATA/" + file_name
+
+            hash_table = HashTable(45000)
+            graph = Graph()
+            process_csv(file_name, hash_table)
+            process_csv(file_name, graph, is_graph=True)
+
+            top_10_songs(hash_table)
+
+            continue_flag = input("Press Enter to continue...")
+            if continue_flag:
+                continue
+            break
 
 
 if __name__ == '__main__':
     main()
-    
+
