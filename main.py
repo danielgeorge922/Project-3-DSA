@@ -3,9 +3,10 @@ import sys
 import time
 import heapq
 import numpy as np
-import sys
+import matplotlib.pyplot as plt
+import seaborn as sns
 from collections import deque
-from heapq import heapify, heappush, heappop
+from scipy.spatial import distance
 
 """
 TODO: Show top 10 songs and top 10 genres per user
@@ -308,6 +309,73 @@ def top_10_genres(file_name):
         print(f"{i}. {genre}: {count}")
     
     print(f"Time taken: {time_taken_ms:.2f} ms\n") 
+    
+def load_song_data(file_name):
+    """Loads song data from a CSV file into a list of dictionaries."""
+    with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
+        csv_reader = csv.DictReader(csvfile)
+        return [row for row in csv_reader]
+
+def recommend_similar_songs(data, song_name, num_recommendations=5):
+    """Recommends songs based on Euclidean distance of song features."""
+    song_features = {}
+    feature_keys = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
+    for row in data:
+        features = [float(row[key]) for key in feature_keys if key in row]
+        song_features[row['song_name']] = np.array(features)
+    if song_name not in song_features:
+        print(f"The song '{song_name}' was not found in the dataset.")
+        return
+    distances = [(name, distance.euclidean(song_features[song_name], features)) for name, features in song_features.items() if name != song_name]
+    distances.sort(key=lambda x: x[1])
+    print(f"Songs similar to '{song_name}':")
+    for i, (name, dist) in enumerate(distances[:num_recommendations], start=1):
+        print(f"{i}: {name} (Distance: {dist:.2f})")
+
+def mood_based_playlist(data, mood, num_songs=10):
+    """Creates a playlist based on a specified mood."""
+    moods = {
+        'happy': {'valence': (0.5, 1.0), 'energy': (0.5, 1.0)},
+        'sad': {'valence': (0.0, 0.5), 'energy': (0.0, 0.5)},
+        'calm': {'valence': (0.0, 0.5), 'energy': (0.0, 0.5)},
+        'energetic': {'valence': (0.5, 1.0), 'energy': (0.5, 1.0)}
+    }
+    playlist = []
+    for row in data:
+        if all(moods[mood][key][0] <= float(row[key]) <= moods[mood][key][1] for key in moods[mood] if key in row):
+            playlist.append(row['song_name'])
+            if len(playlist) == num_songs:
+                break
+    print(f"Playlist for '{mood}' mood:")
+    for i, song in enumerate(playlist, start=1):
+        print(f"{i}. {song}")
+
+def visualize_top_genres(data, top_n=10):
+    """Visualizes the top genres based on their count."""
+    sns.set(style="whitegrid")
+    
+    # Count the occurrences of each genre
+    genre_counts = {}
+    for row in data:
+        genre = row['genre'].strip()  # Ensure we strip any leading/trailing whitespace
+        if genre:
+            if genre in genre_counts:
+                genre_counts[genre] += 1
+            else:
+                genre_counts[genre] = 1
+    
+    # Sort genres by count and select the top_n genres
+    top_genres = sorted(genre_counts.items(), key=lambda item: item[1], reverse=True)[:top_n]
+    genres, counts = zip(*top_genres)  # This unpacks the top genres and their counts into two lists
+    
+    # Create a bar plot
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=list(counts), y=list(genres))
+    plt.title(f'Top {top_n} Genres by Count')
+    plt.xlabel('Count')
+    plt.ylabel('Genre')
+    plt.tight_layout()
+    plt.show()
 
 def main():
     if len(sys.argv) < 2:
@@ -318,6 +386,8 @@ def main():
     if not file_name.startswith("DATA/"):
         file_name = "DATA/" + file_name
 
+    data = load_song_data(file_name)
+    
     # Create instances of Graph and HashTable
     graph = Graph()
     hash_table = HashTable(45000)
@@ -338,13 +408,14 @@ def main():
         print("1. Song Matcher")
         print("2. Top 10 Songs")
         print("3. Top 10 Genres")
-        print("4. User Similarity")
-        print("5. Graph Visualization")
+        print("4. Recommend Similar Songs")
+        print("5. Generate Mood-Based Playlist")
+        print("6. Visualize Features")
         print("0. Exit")
         print("-" * 40)
 
         option = input("Please select an option from the menu above: [0 to quit] ")
-        if not option.isdigit() or not (0 <= int(option) <= 5):
+        if not option.isdigit() or not (0 <= int(option) <= 6):
             print("Please enter a valid option.")
             continue
         option = int(option)
@@ -408,10 +479,15 @@ def main():
             top_10_genres(file_name)  # Call the function with the CSV file path
 
         elif option == 4:
-            print("User similarity feature is currently not implemented.")
-
+            song_name = input("Enter the song name to find similar songs: ")
+            recommend_similar_songs(data, song_name)
+            
         elif option == 5:
-            print("Graph visualization feature is currently not implemented.")
+            mood = input("Enter a mood (happy, sad, calm, energetic): ")
+            mood_based_playlist(data, mood)
+            
+        elif option == 6:
+            visualize_top_genres(data, top_n=10) 
 
         input("Press Enter to continue...")
 
