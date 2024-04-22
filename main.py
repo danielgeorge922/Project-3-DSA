@@ -6,6 +6,7 @@ import numpy as np
 import sys
 from collections import deque
 from heapq import heapify, heappush, heappop
+
 """
 TODO: Show top 10 songs and top 10 genres per user
 TODO: Determine a similarity score in musical taste between users
@@ -117,12 +118,20 @@ class Graph:
         return similar_songs[:5]  # Return top 5 similar songs
 
 def process_csv(file_name, container, is_graph=False):
-    relevant_fields_hash = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
-                            'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo',
-                            'duration_ms', 'time_signature']
-    relevant_fields_graph = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
-                             'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo',
-                             'duration_ms', 'time_signature']
+    # Define the fields from the CSV to be used in the HashTable and Graph
+    relevant_fields_hash = [
+        'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
+        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
+        'duration_ms', 'time_signature'
+    ]
+
+    relevant_fields_graph = [
+        'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
+        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
+        'duration_ms', 'time_signature'
+    ]
+
+    start_time = time.time()  # Start timing
     try:
         with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
             csv_reader = csv.DictReader(csvfile)
@@ -130,13 +139,10 @@ def process_csv(file_name, container, is_graph=False):
                 try:
                     song_name = row['song_name']
                     if is_graph:
-                        song_metrics = {float(row[key]) for key in relevant_fields_hash if key in row}
-
-#                        key: (float(row[key]) if key != 'genre' else row[key]) for key in
-#                                        relevant_fields_graph if key in row}
+                        song_metrics = {key: float(row[key]) for key in relevant_fields_graph if key in row}
                         container.add_song(song_name, song_metrics)
                     else:
-                        song_metrics = [float(row[key]) for key in relevant_fields_hash if key in row]
+                        song_metrics = {key: float(row[key]) for key in relevant_fields_hash if key in row}
                         container.insert(song_name, song_metrics)
                 except ValueError as ve:
                     print(f"Skipping row due to error: {ve}")
@@ -144,7 +150,9 @@ def process_csv(file_name, container, is_graph=False):
                     print(f"Missing key {ke} in data; this row will be skipped.")
     except Exception as e:
         print(f"Failed to process file {file_name}: {e}")
-
+    finally:
+        end_time = time.time()
+        print(f"Time to process {file_name} into {'Graph' if is_graph else 'HashTable'}: {end_time - start_time:.2f} seconds")
 
 def bfs(graph, start_song, songs_list):
     # Initialize distance dictionary to store distances from start_song to other songs
@@ -189,11 +197,12 @@ def graph_song_similarity(songs_list, graph):
 
     # Print the top 5 similar songs
     print("-" * 40)
-    print("Top 5 songs similar to your listening history:")
+    print("\nTop 5 songs similar to your listening history:\n")
     for i, (song, _) in enumerate(closest_songs, start=1):
         print(f"{i}. {song}")
 
-    print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms")
+    print(f"\nTime taken with BFS implementation: {time_taken_ms:.2f} ms\n")
+    print("-" * 40)
 
 
 def hash_table_similarity(songs_list, hash_table):
@@ -232,10 +241,10 @@ def hash_table_similarity(songs_list, hash_table):
     time_taken_ms = (end_time - start_time) * 1000  # Calculate the time taken in milliseconds
 
     print("-" * 40)
-    print("5 Songs You Might Like Based off Listening History")
+    print("\n5 Songs You Might Like Based off Listening History\n")
     for i, (song, _) in enumerate(top_5_closest, start=1):
         print(f"{i}. {song}")
-    print(f"Time taken with Hash Table implementation: {time_taken_ms:.2f} ms")
+    print(f"\nTime taken with Hash Table implementation: {time_taken_ms:.2f} ms\n")
 
 
 def normalize_title(title):
@@ -277,8 +286,7 @@ def top_10_songs(container, is_graph=False):
         print(f"{i}. {entry[1]}: {entry[0]:.4f} ms")
 
     time_taken_ms = (end_time - start_time) * 1000
-    print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms")
-    print()
+    print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms\n")
 """        
         for key, value in container.adj_list.items():
             print(value.get('metrics')[0])
@@ -292,45 +300,57 @@ def top_10_songs(container, is_graph=False):
 """
 
 def main():
+    print("-" * 40)
+    print("*" * 8 + " Welcome to SpotiMatch " + "*" * 9)
+    print("-" * 40)
+    print()
+
     while True:
-        print("Welcome to SpotiMatch")
-        print("-" * 40)
+        print("   MENU:")
         print("1. Song Matcher")
         print("2. Top 10 Songs")
         print("3. Top 10 Genres")
         print("4. User Similarity")
-        print("5. Graph Visualization")
+        print("5. Graph Visualization\n")
         print("-" * 40)
+        print()
         option = int(input("Please select an option from the menu above: [0 to quit] "))
 
         if option == 0:
             print("Goodbye!")
             break
-        elif option == 1:
+
+        if option == 1:
             file_name = input("Please enter your data file name. [0 to quit]: ")
             if file_name == "0":
                 break
-            elif not file_name.startswith("DATA/"):
+            if not file_name.startswith("DATA/"):
                 file_name = "DATA/" + file_name
-
-#            if len(sys.argv) < 2:
-#                print("Usage: python script.py <filename>")
-#                return
-
-
 
             # Create instances of Graph and HashTable
             graph = Graph()
             hash_table = HashTable(45000)
 
+            print("-" * 60)
+            print()
             # Process the CSV file to populate graph and hash table
-            process_csv(file_name, graph, is_graph=True)
+            start_ht_time = time.time()
             process_csv(file_name, hash_table)
+            end_ht_time = time.time()
+            
+            print(f"Time taken to create and populate HashTable: {end_ht_time - start_ht_time:.2f} seconds")
 
+            start_g_time = time.time()
+            process_csv(file_name, graph, is_graph=True)
+            end_g_time = time.time()
+            
+            print(f"Time taken to create and populate Graph: {end_g_time - start_g_time:.2f} seconds\n")
+            print("-" * 60)
+            
 #            print("Welcome to SpotiMatch")
 #            print("-" * 40)
             try:
-                songs_amount = int(input("List the amount of songs you want to put into the matcher (1 - 10): "))
+                songs_amount = int(input("\nList the amount of songs you want to put into the matcher (1 - 10): "))
                 if not 1 <= songs_amount <= 10:
                     print("The number of songs must be between 1 and 10.")
                     return
