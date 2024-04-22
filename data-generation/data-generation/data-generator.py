@@ -12,7 +12,7 @@ def generate_user_data():
 
     user_data = [['artist', 'track_name', 'duration_ms', 'danceability', 'energy']]
 
-    entry = []
+
     for i in range(15000):
         index = random.randint(0, songs.__len__() - 1)
 
@@ -37,6 +37,7 @@ def user_data_generator(quantity):
             # Write data to the CSV file
             writer.writerows(data)
         print(f"CSV file '{csv_file_path}' created successfully.")
+
 
 if __name__ == "__main__":
     user_data_generator(10)
