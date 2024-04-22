@@ -204,7 +204,6 @@ def graph_song_similarity(songs_list, graph):
     print(f"\nTime taken with BFS implementation: {time_taken_ms:.2f} ms\n")
     print("-" * 40)
 
-
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
     song_scores = []
@@ -212,7 +211,11 @@ def hash_table_similarity(songs_list, hash_table):
     for song in songs_list:
         result = hash_table.search(song)  # Get result from hash table
         if result:  # Check if the result is not empty
-            song_scores.append(result[0])  # Assuming result[0] is the metric you are interested in
+            try:
+                # Using 'duration_ms' as the metric
+                song_scores.append(result['duration_ms'])  # Adjust to the correct metric key
+            except KeyError as e:
+                print(f"Error: Key '{e}' not found in result for song '{song}'.")
         else:
             print(f"No data found for {song}")
 
@@ -227,18 +230,18 @@ def hash_table_similarity(songs_list, hash_table):
         if bucket:  # Check if the bucket is not empty
             for song, values in bucket:
                 try:
-                    song_metric = values[0]  # Assuming values[0] is the metric
+                    song_metric = values['duration_ms']  # Using 'duration_ms' as the metric
                     difference = abs(song_metric - average_of_songs)
                     closest_songs.append((song, difference))
-                except (TypeError, IndexError, ValueError) as e:
-                    print(f"Error processing song {song}: {e}")
+                except KeyError as e:
+                    print(f"Error: Key '{e}' not found while processing song '{song}'.")
 
     # Sort by the smallest difference and get the top 5
     closest_songs.sort(key=lambda x: x[1])
     top_5_closest = closest_songs[:5]
 
-    end_time = time.time()  # End the timer
-    time_taken_ms = (end_time - start_time) * 1000  # Calculate the time taken in milliseconds
+    end_time = time.time()
+    time_taken_ms = (end_time - start_time) * 1000
 
     print("-" * 40)
     print("\n5 Songs You Might Like Based off Listening History\n")
@@ -246,11 +249,9 @@ def hash_table_similarity(songs_list, hash_table):
         print(f"{i}. {song}")
     print(f"\nTime taken with Hash Table implementation: {time_taken_ms:.2f} ms\n")
 
-
 def normalize_title(title):
     """Normalize the title to lower case for uniform comparison."""
     return title.lower().strip()
-
 
 def top_10_songs(container, is_graph=False):
     heap = [(0, '')]
