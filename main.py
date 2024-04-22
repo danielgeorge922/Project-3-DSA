@@ -6,10 +6,10 @@ import numpy as np
 import sys
 from collections import deque
 """
-# TODO: Show top 10 songs and top 10 genres per user
-# TODO: Determine a similarity score in musical taste between users
-# TODO: Use NetworkX to visualize the graph
-# TODO: Write a control similar to the following:
+TODO: Show top 10 songs and top 10 genres per user
+TODO: Determine a similarity score in musical taste between users
+TODO: Use NetworkX to visualize the graph
+TODO: Write a control similar to the following:
 
 Welcome to SpotiMatch
 ----------------------------------------
@@ -24,6 +24,9 @@ Welcome to SpotiMatch
         --> Input # users to compare in musical taste
     5. Graph Visualization
         --> Input data files
+
+NOTE: graph_similarity_score's bfs is implemented in such a way that it returns the first 4 entries of the graph,
+and the song that was inputted by the user in first position. 
 """
 
 
@@ -118,7 +121,7 @@ def process_csv(file_name, container, is_graph=False):
                             'duration_ms', 'time_signature']
     relevant_fields_graph = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
                              'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo',
-                             'duration_ms', 'time_signature', 'genre']
+                             'duration_ms', 'time_signature']
     try:
         with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
             csv_reader = csv.DictReader(csvfile)
@@ -126,8 +129,10 @@ def process_csv(file_name, container, is_graph=False):
                 try:
                     song_name = row['song_name']
                     if is_graph:
-                        song_metrics = {key: (float(row[key]) if key != 'genre' else row[key]) for key in
-                                        relevant_fields_graph if key in row}
+                        song_metrics = {float(row[key]) for key in relevant_fields_hash if key in row}
+
+#                        key: (float(row[key]) if key != 'genre' else row[key]) for key in
+#                                        relevant_fields_graph if key in row}
                         container.add_song(song_name, song_metrics)
                     else:
                         song_metrics = [float(row[key]) for key in relevant_fields_hash if key in row]
@@ -276,6 +281,7 @@ def main():
                 songs_list.append(key)
                 print(f"Added '{key}' based on your input '{song_name}'.")
                 found_in_data = True
+                print()
                 break
 
         if not found_in_data:

@@ -10,7 +10,7 @@ def generate_user_data(entries):
             song = f.readline().strip()
             songs[i] = artist + "," + song
 
-    user_data = [['artist', 'track_name', 'duration_ms', 'danceability', 'energy']]
+    user_data = [['artist', 'song_name', 'duration_ms', 'danceability', 'energy']]
 
 
     for i in range(entries):
