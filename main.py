@@ -5,6 +5,27 @@ import heapq
 import numpy as np
 import sys
 from collections import deque
+"""
+# TODO: Show top 10 songs and top 10 genres per user
+# TODO: Determine a similarity score in musical taste between users
+# TODO: Use NetworkX to visualize the graph
+# TODO: Write a control similar to the following:
+
+Welcome to SpotiMatch
+----------------------------------------
+    1. Song Matcher
+        --> Input data file
+        --> List the amount of songs you want to put into the matcher (1 - 10)
+    2. Top 10 Songs
+        --> Input data file
+    3. Top 10 Genres
+        --> Input data file
+    4. User Similarity
+        --> Input # users to compare
+    5. Graph Visualization
+        --> Input data files
+"""
+
 
 class HashTable:
     def __init__(self, size=1024):
@@ -49,6 +70,7 @@ class HashTable:
                 for key, value in bucket:
                     self.insert(key, value)
 
+
 class Graph:
     def __init__(self):
         self.adj_list = {}
@@ -87,14 +109,15 @@ class Graph:
                         heapq.heappush(pq, (dist + weight, neighbor))
 
         return similar_songs[:5]  # Return top 5 similar songs
- 
+
+
 def process_csv(file_name, container, is_graph=False):
     relevant_fields_hash = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
-                       'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
-                       'duration_ms', 'time_signature']
+                            'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo',
+                            'duration_ms', 'time_signature']
     relevant_fields_graph = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
-                       'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
-                       'duration_ms', 'time_signature', 'genre']
+                             'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo',
+                             'duration_ms', 'time_signature', 'genre']
     try:
         with open(file_name, 'r', newline='', encoding='utf-8') as csvfile:
             csv_reader = csv.DictReader(csvfile)
@@ -102,7 +125,8 @@ def process_csv(file_name, container, is_graph=False):
                 try:
                     song_name = row['song_name']
                     if is_graph:
-                        song_metrics = {key: (float(row[key]) if key != 'genre' else row[key]) for key in relevant_fields_graph if key in row}
+                        song_metrics = {key: (float(row[key]) if key != 'genre' else row[key]) for key in
+                                        relevant_fields_graph if key in row}
                         container.add_song(song_name, song_metrics)
                     else:
                         song_metrics = [float(row[key]) for key in relevant_fields_hash if key in row]
@@ -113,6 +137,7 @@ def process_csv(file_name, container, is_graph=False):
                     print(f"Missing key {ke} in data; this row will be skipped.")
     except Exception as e:
         print(f"Failed to process file {file_name}: {e}")
+
 
 def bfs(graph, start_song, songs_list):
     # Initialize distance dictionary to store distances from start_song to other songs
@@ -136,10 +161,11 @@ def bfs(graph, start_song, songs_list):
     closest_songs = sorted(distance.items(), key=lambda x: x[1])[:5]
     return closest_songs
 
-def graph_similarity(songs_list, graph):
+
+def graph_song_similarity(songs_list, graph):
     start_time = time.time()
 
-    # Initialize closest songs list
+    # Initialize the closest songs list
     closest_songs = []
 
     # Perform BFS for each user-input song
@@ -161,6 +187,7 @@ def graph_similarity(songs_list, graph):
         print(f"{i}. {song}")
 
     print(f"Time taken with BFS implementation: {time_taken_ms:.2f} ms")
+
 
 def hash_table_similarity(songs_list, hash_table):
     start_time = time.time()
@@ -202,10 +229,12 @@ def hash_table_similarity(songs_list, hash_table):
     for i, (song, _) in enumerate(top_5_closest, start=1):
         print(f"{i}. {song}")
     print(f"Time taken with Hash Table implementation: {time_taken_ms:.2f} ms")
-    
+
+
 def normalize_title(title):
     """Normalize the title to lower case for uniform comparison."""
     return title.lower().strip()
+
 
 def main():
     if len(sys.argv) < 2:
@@ -261,9 +290,10 @@ def main():
 
     if songs_list:
         hash_table_similarity(songs_list, hash_table)
-        graph_similarity(songs_list, graph)
+        graph_song_similarity(songs_list, graph)
     else:
         print("No valid songs were inputted for processing.")
+
 
 if __name__ == '__main__':
     main()
