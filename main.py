@@ -85,7 +85,9 @@ class Graph:
     def add_song(self, song_name, song_metrics):
         if song_name in self.adj_list:
             # If the song already exists, double the 'time' metric
-            self.adj_list[song_name]["metrics"]["time"] *= 2
+            old_time = self.adj_list[song_name]["metrics"][2]
+            new_time = song_metrics[2] + old_time
+            self.adj_list[song_name]["metrics"][2] = new_time
             return
         
         self.adj_list[song_name] = {"metrics": song_metrics, "neighbors": []}
