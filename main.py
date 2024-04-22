@@ -38,7 +38,6 @@ class HashTable:
         self.items_count = 0
 
     def hash_function(self, key):
-        # Simple hash function to distribute keys more uniformly
         hash_code = 0
         for char in key:
             hash_code = (hash_code * 31 + ord(char)) % self.size
@@ -49,10 +48,12 @@ class HashTable:
         if self.table[index] is None:
             self.table[index] = [(key, value)]
         else:
-            for i, (item_key, _) in enumerate(self.table[index]):
+            for i, (item_key, item_value) in enumerate(self.table[index]):
                 if item_key == key:
+                    # Assuming value is a dictionary with a 'time' key.
                     # Update existing entry if identical key found
-                    self.table[index][i] = (key, value)
+                    item_value['time'] *= 2  # Doubles the 'time' value
+                    self.table[index][i] = (key, item_value)
                     return
             self.table[index].append((key, value))
         self.items_count += 1
@@ -74,14 +75,15 @@ class HashTable:
                 for key, value in bucket:
                     self.insert(key, value)
 
-
 class Graph:
     def __init__(self):
         self.adj_list = {}
 
     def add_song(self, song_name, song_metrics):
         if song_name in self.adj_list:
-            print(f"'{song_name}' already exists. Consider updating instead of adding.")
+            # If the song already exists, double the 'time' metric
+            if 'time' in self.adj_list[song_name]["metrics"]:
+                self.adj_list[song_name]["metrics"]["time"] *= 2
             return
         
         self.adj_list[song_name] = {"metrics": song_metrics, "neighbors": []}
@@ -92,7 +94,6 @@ class Graph:
             metrics2 = np.array([self.adj_list[song2]["metrics"][key] for key in ["danceability", "energy"]])
             distance = np.linalg.norm(metrics1 - metrics2)
             self.adj_list[song1]["neighbors"].append((song2, 1 / (1 + distance)))
-            # I think we can delete the line below because we can consider any edge to be bidirectional
             self.adj_list[song2]["neighbors"].append((song1, 1 / (1 + distance)))
 
     def get_similar_songs(self, song_name):
@@ -114,7 +115,6 @@ class Graph:
                         heapq.heappush(pq, (dist + weight, neighbor))
 
         return similar_songs[:5]  # Return top 5 similar songs
-
 
 def process_csv(file_name, container, is_graph=False):
     relevant_fields_hash = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
