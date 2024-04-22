@@ -53,7 +53,9 @@ class HashTable:
                 if item_key == key:
                     # Assuming value is a dictionary with a 'time' key.
                     # Update existing entry if identical key found
-                    item_value['time'] *= 2  # Doubles the 'time' value
+                    old_value = float(item_value[2])
+                    new_value = float(value[2]) + old_value
+                    item_value[2] = str(new_value)# Doubles the 'time' value
                     self.table[index][i] = (key, item_value)
                     return
             self.table[index].append((key, value))
@@ -83,8 +85,7 @@ class Graph:
     def add_song(self, song_name, song_metrics):
         if song_name in self.adj_list:
             # If the song already exists, double the 'time' metric
-            if 'time' in self.adj_list[song_name]["metrics"]:
-                self.adj_list[song_name]["metrics"]["time"] *= 2
+            self.adj_list[song_name]["metrics"]["time"] *= 2
             return
         
         self.adj_list[song_name] = {"metrics": song_metrics, "neighbors": []}
@@ -117,18 +118,11 @@ class Graph:
 
         return similar_songs[:5]  # Return top 5 similar songs
 
+
 def process_csv(file_name, container, is_graph=False):
     # Define the fields from the CSV to be used in the HashTable and Graph
-    relevant_fields_hash = [
-        'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
-        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
-        'duration_ms', 'time_signature'
-    ]
-
-    relevant_fields_graph = [
-        'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 
-        'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 
-        'duration_ms', 'time_signature'
+    relevant_fields = [
+        'danceability', 'energy', 'duration_ms', 'artist', 'song_name'
     ]
 
     start_time = time.time()  # Start timing
@@ -138,12 +132,19 @@ def process_csv(file_name, container, is_graph=False):
             for row in csv_reader:
                 try:
                     song_name = row['song_name']
+                    song_metrics = []
                     if is_graph:
-                        song_metrics = {key: float(row[key]) for key in relevant_fields_graph if key in row}
+                        for key in relevant_fields:
+                            if key != 'song_name':
+                                song_metrics.append(row[key])
                         container.add_song(song_name, song_metrics)
+                        song_metrics = []
                     else:
-                        song_metrics = {key: float(row[key]) for key in relevant_fields_hash if key in row}
+                        for key in relevant_fields:
+                            if key != 'song_name':
+                                song_metrics.append(row[key])
                         container.insert(song_name, song_metrics)
+                        song_metrics = []
                 except ValueError as ve:
                     print(f"Skipping row due to error: {ve}")
                 except KeyError as ke:
@@ -152,7 +153,10 @@ def process_csv(file_name, container, is_graph=False):
         print(f"Failed to process file {file_name}: {e}")
     finally:
         end_time = time.time()
-        print(f"Time to process {file_name} into {'Graph' if is_graph else 'HashTable'}: {end_time - start_time:.2f} seconds")
+        print(f"Time to process {file_name} into {'Graph' if is_graph else 'HashTable'}: {end_time - start_time:.2f} ms")
+    # relevant_fields_graph = [
+    #     'danceability', 'energy', 'duration_ms', 'artist', 'song_name'
+    # ]
 
 def bfs(graph, start_song, songs_list):
     # Initialize distance dictionary to store distances from start_song to other songs
@@ -330,7 +334,7 @@ def main():
 
             # Create instances of Graph and HashTable
             graph = Graph()
-            hash_table = HashTable(45000)
+            hash_table = HashTable(1000)
 
             print("-" * 60)
             print()
